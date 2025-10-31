@@ -1,0 +1,47 @@
+SELECT * FROM (
+  SELECT 
+    ft.transaction_id,
+    ft.date,
+    ft.branch_id,
+    kc.branch_name,
+    kc.kota,
+    kc.provinsi,
+    kc.rating AS rating_cabang,
+    ft.customer_name,
+    ft.product_id,
+    p.product_name, 
+    ft.price AS actual_price,
+    ft.discount_percentage,
+
+    -- untuk menghitung persentase gross laba
+    CASE
+      WHEN ft.price <= 50000 THEN 0.10
+      WHEN ft.price > 50000 AND ft.price <= 100000 THEN 0.15
+      WHEN ft.price > 100000 AND ft.price <= 300000 THEN 0.20
+      WHEN ft.price > 300000 AND ft.price <= 500000 THEN 0.25
+      ELSE 0.30
+    END AS persentase_gross_laba,
+
+    -- menhitung harga setelah diskon
+    ft.price * (1 - ft.discount_percentage / 100) AS nett_sales,
+
+    -- menhitung untung yang diperoleh
+    (ft.price * (1 - ft.discount_percentage / 100)) * 
+    CASE
+      WHEN ft.price <= 50000 THEN 0.10
+      WHEN ft.price > 50000 AND ft.price <= 100000 THEN 0.15
+      WHEN ft.price > 100000 AND ft.price <= 300000 THEN 0.20
+      WHEN ft.price > 300000 AND ft.price <= 500000 THEN 0.25
+      ELSE 0.30
+    END AS nett_profit,
+
+    ft.rating AS rating_transaksi
+
+  FROM action-potential-476011-i0.Kimia_Farma_Dataset.kf_final_transaction ft 
+  JOIN action-potential-476011-i0.Kimia_Farma_Dataset.kf_kantor_cabang kc ON ft.branch_id = kc.branch_id
+  JOIN action-potential-476011-i0.Kimia_Farma_Dataset.kf_product p ON ft.product_id = p.product_id
+  WHERE ft.date BETWEEN '2020-01-01' AND '2023-12-31'
+) AS profit_keseluruhan 
+ORDER BY 
+  date DESC,
+  transaction_id DESC;
